@@ -23,8 +23,8 @@ class UserController extends Controller
      */
     public function index(): JsonResponse
     {
-        $user = User::all();
-        return $this->success(["List of all users."], $user);
+        $users = User::all();
+        return $this->success(["List of all users."], $users);
     }
 
     /**
@@ -70,12 +70,43 @@ class UserController extends Controller
     /**
      * Display the specified resource.
      *
-     * @param  int  $id
+     * @param  UnsignedBigInteger $id
      * @return JsonResponse
      */
     public function show($id): JsonResponse
     {
         $user = User::find($id);
         return $this->success(["User's infos."], $user);
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param UnsignedBigInteger $id
+     * @return JsonResponse
+     */
+    public function destroy($id): JsonResponse
+    {
+        $user = User::find($id);
+
+        if ($user->type == "administrator" && count(User::where('type', 'administrator')->get())) {
+            return $this->error(['The system require at least ONE administrator'], 405);
+        }
+
+        $user->delete();
+        return $this->success(['User deleted.'], $user);
+    }
+
+    /**
+     * Returns all user's companies.
+     *
+     * @param UnsignedBigInteger $id
+     * @return JsonResponse
+     */
+    public function get_companies($id): JsonResponse
+    {
+        $user = User::find($id);
+        $companyUsers['companies'] = $user->companies->pluck('cnpj', 'id');
+        return $this->success(["List of user's companies."], $companyUsers);
     }
 }

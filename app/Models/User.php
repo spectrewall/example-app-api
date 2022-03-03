@@ -38,6 +38,15 @@ class User extends Authenticatable
     ];
 
     /**
+     * The relations to eager load on every query.
+     *
+     * @var array
+     */
+    protected $with = [
+        'address'
+    ];
+
+    /**
      * The attributes that should be cast.
      *
      * @var array<string, string>
@@ -49,5 +58,10 @@ class User extends Authenticatable
     public function companies()
     {
         return $this->belongsToMany(Company::class, 'company_user', 'user_id', 'company_id');
+    }
+
+    public function address()
+    {
+        return $this->hasOne(Address::class, 'id', 'address_id');
     }
 }

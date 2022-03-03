@@ -61,4 +61,16 @@ class ProfileController extends Controller
         $user->delete();
         return $this->success(['Profile deleted.'], $user);
     }
+
+    /**
+     * Returns all user's companies.
+     *
+     * @return JsonResponse
+     */
+    public function get_companies(): JsonResponse
+    {
+        $user = auth()->user();
+        $companyUsers['companies'] = $user->companies->pluck('cnpj', 'id');
+        return $this->success(["Your companies."], $companyUsers);
+    }
 }

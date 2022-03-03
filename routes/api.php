@@ -19,27 +19,56 @@ use App\Http\Controllers\Api\UserController;
 
 
 Route::controller(AuthController::class)->group(function () {
+
     Route::post('/login', 'login')->name('login');
 });
 
 Route::middleware('auth:sanctum')->group(function () {
 
-    Route::controller(ProfileController::class)->name('profile.')->group(function () {
-        Route::put('/profile/update', 'update')->name('update');
-        Route::get('/profile', 'show')->name('show');
-        Route::delete('/profile/delete', 'destroy')->name('delete');
+    Route::controller(ProfileController::class)->prefix('/profile')->name('profile.')->group(function () {
+
+        Route::get('/', 'show')->name('show');
+        Route::put('/update', 'update')->name('update');
+        Route::delete('/delete', 'destroy')->name('delete');
+        Route::get('/companies', 'get_companies')->name('companies');
     });
 
     Route::middleware('only.admin')->group(function () {
 
         Route::controller(UserController::class)->name('user.')->group(function () {
-            Route::put('/user/{id}/update', 'update')->name('update');
             Route::get('/users', 'index')->name('index');
-            Route::get('/user/{id}', 'show')->name('show');
-            Route::post('/user/create', 'create')->name('create');
+
+            Route::prefix('/user')->group(function () {
+
+                Route::post('/create', 'create')->name('create');
+                Route::prefix('/{id}')->group(function () {
+
+                    Route::get('/', 'show')->name('show');
+                    Route::put('/update', 'update')->name('update');
+                    Route::delete('/delete', 'destroy')->name('update');
+                    Route::get('/companies', 'get_companies')->name('show');
+                });
+            });
         });
 
         Route::controller(CompanyController::class)->name('company.')->group(function () {
+
+            Route::get('/companies', 'index')->name('index');
+            Route::post('/company/create', 'create')->name('create');
+
+            Route::prefix('/company/{id}')->group(function () {
+
+                Route::get('/', 'show')->name('show');
+                Route::put('/update', 'update')->name('update');
+                Route::delete('/delete', 'destroy')->name('update');
+
+                Route::prefix('/users')->name('users.')->group(function () {
+
+                    Route::get('/', 'get_users')->name('get');
+                    Route::post('/add', 'add_users')->name('add');
+                    Route::put('/remove', 'remove_users')->name('remove');
+                });
+            });
         });
     });
 });

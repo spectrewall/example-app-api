@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('cnpj');
             $table->foreignId('address_id')->constrained('addresses')->onDelete('cascade');
+            $table->softDeletes();
             $table->timestamps();
         });
     }

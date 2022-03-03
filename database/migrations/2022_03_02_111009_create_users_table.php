@@ -14,7 +14,6 @@ return new class extends Migration
     public function up()
     {
         Schema::create('users', function (Blueprint $table) {
-            $table->softDeletes();
             $table->id();
             $table->string('name');
             $table->enum('type', ['administrator', 'client']);
@@ -24,6 +23,7 @@ return new class extends Migration
             $table->string('password');
             $table->foreignId('address_id')->constrained('addresses')->onDelete('cascade');
             $table->rememberToken();
+            $table->softDeletes();
             $table->timestamps();
         });
     }
