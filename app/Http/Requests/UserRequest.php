@@ -2,17 +2,15 @@
 
 namespace App\Http\Requests;
 
-use App\Models\User;
+use App\Traits\AddressValidation;
 use App\Traits\ResponseApi;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
-use Illuminate\Support\Arr;
-use Illuminate\Validation\Rule;
 
 class UserRequest extends FormRequest
 {
-    use ResponseApi;
+    use ResponseApi, AddressValidation;
 
     /**
      * Overriding response of failed validation
@@ -41,17 +39,12 @@ class UserRequest extends FormRequest
      */
     public function rules(): array
     {
-        $addressRequest = new AddressRequest();
-        $addressRules = $addressRequest->rules();
+        $uniqueRule = 'unique:users';
+        if ($this->isMethod('PUT')) {
+            $uniqueRule .= ',NULL,';
 
-        $uniqueRule = null;
-        if ($this->getRequestUri() == "/api/profile/update") {
-            $uniqueRule = Rule::unique((new User)->getTable())->ignore(auth()->id());
-        } elseif ($this->getRequestUri() == "/api/signup") {
-            $uniqueRule = 'unique:users';
-        } else {
-            $id = explode('/', $this->getRequestUri())[3];
-            $uniqueRule = Rule::unique((new User)->getTable())->ignore($id);
+            if ($this->route('id')) $uniqueRule .= $this->route('id');
+            else $uniqueRule .= auth()->id();
         }
 
         $userRules = [
@@ -63,7 +56,7 @@ class UserRequest extends FormRequest
             ]
         ];
 
-        $rules = Arr::collapse([$addressRules, $userRules]);
+        $rules = array_merge($this->addressRules(), $userRules);
 
         return $rules;
     }

@@ -11,11 +11,10 @@ use Illuminate\Support\Facades\Hash;
 use App\Models\Address;
 use App\Models\User;
 use App\Http\Requests\UserRequest;
+use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
-    use ResponseApi;
-
     /**
      * Update function
      *
@@ -56,13 +55,14 @@ class UserController extends Controller
     public function create(UserRequest $request): JsonResponse
     {
         $data = $request->validated();
-
-        $address = Address::create($data);
-        $data['address_id'] = $address->id;
         $data['type'] = 'client';
         $data['password'] = Hash::make($data['password']);
 
-        $user = User::create($data);
+        $user = DB::transaction(function () use ($data) {
+            $address = Address::create($data);
+            $data['address_id'] = $address->id;
+            return User::create($data);
+        });
 
         return $this->success(["User created."], $user);
     }
@@ -75,7 +75,7 @@ class UserController extends Controller
      */
     public function show($id): JsonResponse
     {
-        $user = User::find($id);
+        $user = User::findOrFail($id);
         return $this->success(["User's infos."], $user);
     }
 
@@ -103,10 +103,10 @@ class UserController extends Controller
      * @param UnsignedBigInteger $id
      * @return JsonResponse
      */
-    public function get_companies($id): JsonResponse
+    public function getCompanies($id): JsonResponse
     {
-        $user = User::find($id);
-        $companyUsers['companies'] = $user->companies->pluck('cnpj', 'id');
+        $user = User::findOrFail($id);
+        $companyUsers['companies'] = $user->companies()->pluck('cnpj', 'id');
         return $this->success(["List of user's companies."], $companyUsers);
     }
 }

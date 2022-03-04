@@ -24,15 +24,11 @@ trait ResponseApi
         if ($isSuccess) {
             return response()->json([
                 'message' => $message,
-                'error' => false,
-                'status' => $statusCode,
                 'data' => $data
             ], $statusCode);
         } else {
             return response()->json([
                 'message' => $message,
-                'error' => true,
-                'status' => $statusCode,
             ], $statusCode);
         }
     }

@@ -15,8 +15,6 @@ use App\Models\User;
 
 class AuthController extends Controller
 {
-    use ResponseApi;
-
     /**
      * Login function
      *

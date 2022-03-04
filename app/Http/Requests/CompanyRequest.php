@@ -2,17 +2,15 @@
 
 namespace App\Http\Requests;
 
-use App\Models\Company;
+use App\Traits\AddressValidation;
 use App\Traits\ResponseApi;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
-use Illuminate\Support\Arr;
-use Illuminate\Validation\Rule;
 
 class CompanyRequest extends FormRequest
 {
-    use ResponseApi;
+    use ResponseApi, AddressValidation;
 
     /**
      * Overriding response of failed validation
@@ -41,18 +39,16 @@ class CompanyRequest extends FormRequest
      */
     public function rules()
     {
-        $addressRequest = new AddressRequest();
-        $addressRules = $addressRequest->rules();
-
-        $id = explode('/', $this->getRequestUri())[3];
-        $uniqueRule = Rule::unique((new Company)->getTable())->ignore($id);
+        $uniqueRule = 'unique:companies';
+        if ($this->route('id'))
+            $uniqueRule .= ',NULL,' . $this->route('id');
 
         $companyRules = [
             'name' => ['required', 'string', 'min:3', 'max:255'],
             'cnpj' => ['required', 'string', 'digits:14', $uniqueRule]
         ];
 
-        $rules = Arr::collapse([$addressRules, $companyRules]);
+        $rules = array_merge($this->addressRules(), $companyRules);
 
         return $rules;
     }

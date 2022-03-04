@@ -12,8 +12,6 @@ use Illuminate\Support\Facades\Hash;
 
 class ProfileController extends Controller
 {
-    use ResponseApi;
-
     /**
      * Display the specified resource.
      *
@@ -67,10 +65,11 @@ class ProfileController extends Controller
      *
      * @return JsonResponse
      */
-    public function get_companies(): JsonResponse
+    public function getCompanies(): JsonResponse
     {
+        /** @var User $user */
         $user = auth()->user();
-        $companyUsers['companies'] = $user->companies->pluck('cnpj', 'id');
+        $companyUsers['companies'] = $user->companies()->pluck('cnpj', 'id');
         return $this->success(["Your companies."], $companyUsers);
     }
 }

@@ -16,8 +16,6 @@ use Illuminate\Support\Arr;
 
 class CompanyController extends Controller
 {
-    use ResponseApi;
-
     /**
      * Update function
      *
@@ -25,7 +23,7 @@ class CompanyController extends Controller
      */
     public function index(): JsonResponse
     {
-        $companies = Company::all();
+        $companies = Company::with('address')->get();
         return $this->success(["List of all companies."], $companies);
     }
 
@@ -40,11 +38,9 @@ class CompanyController extends Controller
     {
         $data = $request->validated();
 
-        $company = Company::find($id);
+        $company = Company::findOrFail($id);
         $company->update($data);
-
-        $address = Address::find($company->address_id);
-        $address->update($data);
+        $company->address->update($data);
 
         return $this->success(["Company updated."], $company);
     }
@@ -98,7 +94,7 @@ class CompanyController extends Controller
      * @param UnsignedBigInteger $id
      * @return JsonResponse
      */
-    public function get_users($id): JsonResponse
+    public function getUsers($id): JsonResponse
     {
         $company = Company::find($id);
         $companyUsers['company'] = [
@@ -117,32 +113,35 @@ class CompanyController extends Controller
      * @param UnsignedBigInteger $id
      * @return JsonResponse
      */
-    public function add_users(UserSearchParamsRequest $request, $id): JsonResponse
+    public function addUsers(UserSearchParamsRequest $request, $id): JsonResponse
     {
-        $data = $request->safe()->only('users')['users'];
+        $data = $request->safe()['users'];
 
         $company = Company::find($id);
         if (!$company) {
             return $this->error(["Company not found."], 404);
         }
 
-        $newUsers = User::whereIn('id', isset($data['id']) ? $data['id'] : [])
-            ->orWhereIn('cpf', isset($data['cpf']) ? $data['cpf'] : [])
-            ->orWhereIn('email', isset($data['email']) ? $data['email'] : [])
+        $existingUsers = $company->users()->pluck('users.email', 'users.id');
+
+        $newUsers = User::query()
+            ->whereIn('users.id', $data['id'] ?? [])
+            ->orWhereIn('users.cpf', $data['cpf'] ?? [])
+            ->orWhereIn('users.email', $data['email'] ?? [])
             ->pluck('email', 'id')
-            ->toArray();
+            ->diff($existingUsers)
+            ->unique();
 
-        $existingUsers = $company->users->pluck('email', 'id')->toArray();
-
-        $addedUsers = array_unique(array_diff($newUsers, $existingUsers));
-        if (empty($addedUsers)) {
+        if ($newUsers->isEmpty()) {
             return $this->error(["No users to add."], 404);
         }
 
-        $ids = array_keys($addedUsers);
+        $ids = $newUsers->keys();
+
+        //utilizar syncwithoutdetach
         $company->users()->attach($ids);
 
-        return $this->success(["Users added to the company."], $addedUsers);
+        return $this->success(["Users added to the company."], $newUsers);
     }
 
     /**
@@ -152,18 +151,18 @@ class CompanyController extends Controller
      * @param UnsignedBigInteger $id
      * @return JsonResponse
      */
-    public function remove_users(UserSearchParamsRequest $request, $id): JsonResponse
+    public function removeUsers(UserSearchParamsRequest $request, $id): JsonResponse
     {
-        $data = $request->safe()->only('users')['users'];
+        $data = $request->safe()['users'];
 
         $company = Company::find($id);
         if (!$company) {
             return $this->error(["Company not found."], 404);
         }
 
-        $removingUsers = User::whereIn('id', isset($data['id']) ? $data['id'] : [])
-            ->orWhereIn('cpf', isset($data['cpf']) ? $data['cpf'] : [])
-            ->orWhereIn('email', isset($data['email']) ? $data['email'] : [])
+        $removingUsers = User::whereIn('id', $data['id'] ?? [])
+            ->orWhereIn('cpf', $data['cpf'] ?? [])
+            ->orWhereIn('email', $data['email'] ?? [])
             ->pluck('email', 'id')
             ->toArray();
 
