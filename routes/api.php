@@ -17,9 +17,8 @@ use App\Http\Controllers\Api\UserController;
 |
 */
 
-
 Route::controller(AuthController::class)->group(function () {
-    Route::post('/login', 'login')->name('login');
+    Route::post('/login', 'login')->name('login')->middleware('login.throttle');
 });
 
 Route::middleware('auth:sanctum')->group(function () {

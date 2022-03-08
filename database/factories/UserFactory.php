@@ -19,20 +19,27 @@ class UserFactory extends Factory
      */
     public function definition()
     {
-        $address = Address::factory(1)->create()->first();
-
         return [
             'name' => $this->faker->name(),
             'email' => $this->faker->unique()->safeEmail(),
+            'profile_picture' => 'https://picsum.photos/500',
             'type' => 'client',
-            'cpf' => Str::random(11),
-            'address_id' => $address->id,
+            'cpf' => $this->faker->regexify('[0-9]{11}'),
             'email_verified_at' => now(),
             'password' => Hash::make('password'),
             'remember_token' => Str::random(10),
         ];
     }
-    // procurar Factory state
+
+    public function admin()
+    {
+        return $this->state(function () {
+            return [
+                'name' => 'Mr. Admin',
+                'type' => 'administrator'
+            ];
+        });
+    }
 
     /**
      * Indicate that the model's email address should be unverified.

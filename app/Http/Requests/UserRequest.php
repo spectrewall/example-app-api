@@ -40,24 +40,26 @@ class UserRequest extends FormRequest
     public function rules(): array
     {
         $uniqueRule = 'unique:users';
+        $ProfilePicRequiredRule = 'required';
+
         if ($this->isMethod('PUT')) {
             $uniqueRule .= ',NULL,';
-
             if ($this->route('id')) $uniqueRule .= $this->route('id');
             else $uniqueRule .= auth()->id();
+
+            $ProfilePicRequiredRule = 'nullable';
         }
 
         $userRules = [
             'name' => ['required', 'string', 'min:3', 'max:255'],
             'email' => ['required', 'email', 'max:255', $uniqueRule],
             'cpf' => ['required', 'string', 'digits:11', $uniqueRule],
+            'profile_picture' => [$ProfilePicRequiredRule, 'file','mimes:jpg,png', 'max:4096'],
             'password' =>  [
                 'required', 'string', 'min:8', 'max:32', 'regex:/[a-z]/', 'regex:/[A-Z]/', 'regex:/[0-9]/', 'regex:/[@$!%*#?&]/', 'confirmed'
             ]
         ];
 
-        $rules = array_merge($this->addressRules(), $userRules);
-
-        return $rules;
+        return array_merge($this->addressRules(), $userRules);
     }
 }

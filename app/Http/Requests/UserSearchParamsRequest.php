@@ -41,13 +41,7 @@ class UserSearchParamsRequest extends FormRequest
     public function rules()
     {
         return [
-            'users' => ['required'],
-            'users.id' => ['array'],
-            'users.id.*' => ['integer', 'exists:users,id'],
-            'users.cpf' => ['array'],
-            'users.cpf.*' => ['digits:11'],
-            'users.email' => ['array'],
-            'users.email.*' => ['email']
+            'id' => ['required', 'integer', 'exists:users,id']
         ];
     }
 }

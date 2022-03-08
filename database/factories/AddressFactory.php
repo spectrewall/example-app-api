@@ -15,10 +15,10 @@ class AddressFactory extends Factory
      *
      * @return array<string, mixed>
      */
-    public function definition()
+    public function definition(): array
     {
         return [
-            'cep' => Str::random(8),
+            'cep' => $this->faker->regexify('[0-9]{8}'),
             'street' => $this->faker->streetAddress(),
             'neighborhood' => $this->faker->city(),
             'city' => $this->faker->city(),

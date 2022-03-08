@@ -78,7 +78,7 @@ class CompanyController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param UnsignedBigInteger $id
+     * @param id $id
      * @return JsonResponse
      */
     public function destroy($id): JsonResponse
@@ -91,7 +91,7 @@ class CompanyController extends Controller
     /**
      * Returns all company's users.
      *
-     * @param UnsignedBigInteger $id
+     * @param int $id
      * @return JsonResponse
      */
     public function getUsers($id): JsonResponse
@@ -110,48 +110,25 @@ class CompanyController extends Controller
      * Adds users to the company.
      *
      * @param UserSearchParamsRequest $request
-     * @param UnsignedBigInteger $id
+     * @param int $id
      * @return JsonResponse
      */
-    public function addUsers(UserSearchParamsRequest $request, $id): JsonResponse
+    public function addUsers(UserSearchParamsRequest $request, int $id): JsonResponse
     {
-        $data = $request->safe()['users'];
-
-        $company = Company::find($id);
-        if (!$company) {
-            return $this->error(["Company not found."], 404);
-        }
-
-        $existingUsers = $company->users()->pluck('users.email', 'users.id');
-
-        $newUsers = User::query()
-            ->whereIn('users.id', $data['id'] ?? [])
-            ->orWhereIn('users.cpf', $data['cpf'] ?? [])
-            ->orWhereIn('users.email', $data['email'] ?? [])
-            ->pluck('email', 'id')
-            ->diff($existingUsers)
-            ->unique();
-
-        if ($newUsers->isEmpty()) {
-            return $this->error(["No users to add."], 404);
-        }
-
-        $ids = $newUsers->keys();
-
-        //utilizar syncwithoutdetach
-        $company->users()->attach($ids);
-
-        return $this->success(["Users added to the company."], $newUsers);
+        $userId = $request->validated('id');
+        $company = Company::findOrFail($id);
+        $company->users()->syncWithoutDetach($userId);
+        return $this->success(["User added to the company."]);
     }
 
     /**
      * Adds users to the company.
      *
      * @param UserSearchParamsRequest $request
-     * @param UnsignedBigInteger $id
+     * @param int $id
      * @return JsonResponse
      */
-    public function removeUsers(UserSearchParamsRequest $request, $id): JsonResponse
+    public function removeUsers(UserSearchParamsRequest $request, int $id): JsonResponse
     {
         $data = $request->safe()['users'];
 

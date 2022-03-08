@@ -41,7 +41,7 @@ trait ResponseApi
      * @param integer $statusCode
      * @return JsonResponse
      */
-    public function success($message, $data, $statusCode = 200): JsonResponse
+    public function success($message, $data = null, $statusCode = 200): JsonResponse
     {
         return $this->coreResponse($message, $statusCode, $data);
     }

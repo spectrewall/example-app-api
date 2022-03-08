@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\UserRequest;
 use App\Models\Address;
 use App\Models\User;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use App\Traits\ResponseApi;
 use Illuminate\Support\Facades\Hash;
@@ -26,21 +27,38 @@ class ProfileController extends Controller
     /**
      * Update the specified resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param \Illuminate\Http\Request $request
      * @return JsonResponse
+     * @throws \Throwable
      */
     public function update(UserRequest $request): JsonResponse
     {
         $data = $request->validated();
-        $user = User::find(auth()->id());
+
+        $user = User::findOrFail(auth()->id());
 
         $data['password'] = Hash::make($data['password']);
-        $user->update($data);
 
-        $address = Address::find($user->address_id);
-        $address->update($data);
+        $oldImage = null;
+        if ($request->hasFile('profile_picture')) {
+            $data['profile_picture'] = $request->file('profile_picture')->store('users', 'public');
+            if (!$data['profile_picture']) return $this->error(["Image could not be stored!"]);
+            $oldImage = $user->profile_picture;
+        }
 
-        return $this->success(['Profile updated.'], $user);
+        try {
+            \DB::transaction(function () use ($data, $user) {
+                $user->update($data);
+                $user->address()->first()->update($data);
+            });
+        } catch (\Exception $e) {
+            if ($data['profile_picture']) \Storage::disk('public')->delete($data['profile_picture']);
+            throw new HttpResponseException($this->error([$e->getMessage()]));
+        }
+
+        if (isset($oldImage)) \Storage::disk('public')->delete($oldImage);
+
+        return $this->success(["User updated."], $user);
     }
 
     /**
@@ -57,7 +75,8 @@ class ProfileController extends Controller
         }
 
         $user->delete();
-        return $this->success(['Profile deleted.'], $user);
+
+        return $this->success(['User deleted.']);
     }
 
     /**
